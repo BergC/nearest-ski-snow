@@ -2,9 +2,6 @@
 import requests
 import os
 
-# Files
-from mountains import mountains
-
 def mountain_qualification(filter_by, upper_bound, mountains, origin):
     '''
     Determine what mountains fall within desired distance or time-to-destination.
@@ -20,6 +17,7 @@ def mountain_qualification(filter_by, upper_bound, mountains, origin):
 
         r = requests.get(URL).json()
 
+        # Google's distance matrix value is in meters. Multiply our miles by meters in a mile.
         if filter_by == 'distance' and r['rows'][0]['elements'][0]['distance']['value'] <= (upper_bound * 1609.34):
             eligible_mountains.append(mountain_tuple)
         elif filter_by == 'duration' and r['rows'][0]['elements'][0]['duration']['value'] <= upper_bound:

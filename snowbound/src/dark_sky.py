@@ -7,8 +7,9 @@ from mountains import mountains
 
 # Functions
 from google_distance import mountain_qualification
+from powderline import snow_quality_change
 
-def build_three_day_forecast(filter_by, upper_bound, mountains, origin):
+def build_three_day_forecast(filter_by, upper_bound, qualified_mountains, origin):
     '''
     Ping Dark Sky API and format weather forecast information.
     '''
@@ -18,23 +19,29 @@ def build_three_day_forecast(filter_by, upper_bound, mountains, origin):
     data_refined = {}
 
     # Determine which mountains meet search criteria before fetching weather data.
-    mountains = mountain_qualification(filter_by, upper_bound, mountains, origin)
+    qualified_mountains = mountain_qualification(filter_by, upper_bound, mountains, origin)
 
     # Fetch weather data.
-    for mountain_tuple in mountains:
-        r = requests.get(f'https://api.darksky.net/forecast/{DARK_SKY_KEY}/{mountain_tuple[1]}').json()
-
-        data = r['daily']['data']
-
+    for mountain_tuple in qualified_mountains:
         data_refined.update({ mountain_tuple[0]: [] })
 
+        snow_quality = snow_quality_change(mountain_tuple)
+
+        data_refined[mountain_tuple[0]].append(snow_quality)
+
+        r = requests.get(f'https://api.darksky.net/forecast/{DARK_SKY_KEY}/{mountain_tuple[1]}').json()
+
+        # Dark Sky returns JSON format. Selecting the daily data only.
+        data = r['daily']['data']
+
+        # Only want 3 day forecast.
         weather_count = 0
 
         while weather_count < 3:
             # try:
                 data_refined[mountain_tuple[0]].append(
                     {
-                        'whatever': data[weather_count]["precipType"],
+                        'precip': data[weather_count]["precipType"],
                         'time': data[weather_count]['time'],
                         'precip_probability': data[weather_count]['precipProbability'],
                         'precip_intensity': data[weather_count]['precipIntensity'],
@@ -52,4 +59,4 @@ def build_three_day_forecast(filter_by, upper_bound, mountains, origin):
     return data_refined
 
 
-print(build_three_day_forecast('distance', 100, mountains, '47.623550,-122.330974'))
+print(build_three_day_forecast('distance', 70, mountains, '47.623550,-122.330974'))
